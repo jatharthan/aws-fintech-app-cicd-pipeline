@@ -38,6 +38,12 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v1
 
+      # Ensure ECR repository exists
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names springboot-app || \
+          aws ecr create-repository --repository-name springboot-app
+
       # Build Docker image
       - name: Build Docker image
         run: |
