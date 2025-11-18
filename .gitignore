@@ -35,3 +35,34 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+# ---------------- Spring Boot / Maven ignores ----------------
+
+# Maven target folder
+/target/
+
+# Maven wrapper
+/mvnw
+/mvnw.cmd
+/.mvn/
+
+# IDE files (IntelliJ IDEA, Eclipse, VS Code)
+*.iml
+.idea/
+.vscode/
+*.classpath
+*.project
+*.settings/
+
+# Logs
+*.log
+
+# Spring Boot properties override (sensitive)
+/application.properties
+/application.yml
+/application-*.properties
+/application-*.yml
+
+# OS generated files
+.DS_Store
+Thumbs.db
