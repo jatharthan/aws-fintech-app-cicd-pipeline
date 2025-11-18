@@ -14,11 +14,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up Java for building the app
+      # Set up Java 17 (Amazon Corretto)
       - name: Set up Java 17
         uses: actions/setup-java@v3
         with:
-          distribution: amazon
+          distribution: corretto
           java-version: 17
 
       # Build Spring Boot app
