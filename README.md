@@ -180,7 +180,7 @@ Build Docker Image Locally
 docker build -t springboot-app .
 ```
 
-🗺️ Future Enhancements (Planned)
+# 🗺️ Future Enhancements (Planned)
 
 GitOps with ArgoCD
 
@@ -199,6 +199,7 @@ Multiple Environments
 dev / stage / prod folder structure
 
 Environment-specific values
+
 ---
 
 # 🎯 Summary
