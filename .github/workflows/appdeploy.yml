@@ -47,7 +47,8 @@ jobs:
       # Build Docker image
       - name: Build Docker image
         run: |
-          IMAGE_URI=${{ steps.ecr-login.outputs.registry }}/springboot-app:latest
+          IMAGE_TAG=v${{ github.run_number }}
+          IMAGE_URI=${{ steps.ecr-login.outputs.registry }}/springboot-app:$IMAGE_TAG
           docker build -t $IMAGE_URI .
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
