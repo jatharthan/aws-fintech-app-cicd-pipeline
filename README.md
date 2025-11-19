@@ -5,15 +5,19 @@ It also includes a CI/CD pipeline that automatically builds, containerizes, and 
 
 ⚠️ This repository focuses ONLY on deploying the application to an existing EKS cluster.
 Infrastructure (VPC, EKS, IAM, networking) is fully managed by the separate Infrastructure Repository:
-🔗 aws-fintech-infra-cicd-pipeline
+
+[Infrastructure Repository](https://github.com/jatharthan/aws-fintech-infra-cicd-pipeline)
 
 ---
 
 # 📌 Current Working Commit SHA
----
+
+```
 889907d488baa186244c82ef51fa832cf2e41ac0
----
-This commit represents the stable point before introducing GitOps using ArgoCD.
+```
+
+This represents the stable state before transitioning to Helm and ArgoCD.
+
 ---
 
 # 🔍 Overview
@@ -100,13 +104,15 @@ AWS_SECRET_ACCESS_KEY	Secret key for CI user
 AWS_REGION	Deployment region
 ECR_REPOSITORY	ECR URI without tag
 CLUSTER_NAME	Name of EKS cluster
-4️⃣ IAM Permissions for CI/CD User
 
+4️⃣ IAM Permissions for CI/CD User
 ECR push
 EKS DescribeCluster
 STS AssumeRole
 EKS authentication
 kubectl actions via IAM Authenticator
+
+---
 
 # 📁 Kubernetes Deployment
 
@@ -155,18 +161,24 @@ Update Deployment with new image
 Roll out pods
 
 Verify Update
+
 kubectl rollout status deployment/springboot-app
+
 ---
 
 # 🧪 Testing Locally
 Build JAR
+```
 mvn clean package
-
+```
 Run Locally
+```
 mvn spring-boot:run
-
+```
 Build Docker Image Locally
+```
 docker build -t springboot-app .
+```
 
 🗺️ Future Enhancements (Planned)
 
