@@ -88,8 +88,26 @@ jobs:
 
       - name: Deploy to DEV
         run: |
-          kubectl set image deployment/${APP_NAME}-deployment \
-            ${APP_NAME}-container=${{ needs.build.outputs.image_uri }}
+          DEPLOY="${APP_NAME}-deployment"
+          IMAGE_URI="${{ needs.build.outputs.image_uri }}"
+
+          echo "Checking if deployment '$DEPLOY' exists..."
+
+          if kubectl get deployment "$DEPLOY" >/dev/null 2>&1; then
+            echo "Deployment exists — updating image only..."
+            kubectl set image deployment/$DEPLOY \
+              ${APP_NAME}-container=${IMAGE_URI} --record
+          else
+            echo "First deployment — applying manifest with BASE image..."
+            kubectl apply -f k8s/deployment.yaml
+
+            echo "Waiting for deployment to be ready..."
+            kubectl rollout status deployment/$DEPLOY
+
+            echo "Updating deployment to real image..."
+            kubectl set image deployment/$DEPLOY \
+              ${APP_NAME}-container=${IMAGE_URI} --record
+          fi
 
       - name: Verify DEV rollout
         run: kubectl rollout status deployment/${APP_NAME}-deployment
