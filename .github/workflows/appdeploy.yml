@@ -1,75 +1,155 @@
-name: Build and Push to ECR
+name: Build & Multi-Env Deploy
 
 on:
   push:
     branches:
       - master
+    paths-ignore:
+      - 'README.md'
+      - '.github/workflows/*.yml'
+
+env:
+  AWS_REGION: us-east-1
+  APP_NAME: springboot-app
+  CLUSTER_PREFIX: pulseagami-eks
 
 jobs:
-  build-and-push:
+
+  # ----------------------------------------------------
+  # 1. BUILD & PUSH IMAGE (Runs once)
+  # ----------------------------------------------------
+  build:
     runs-on: ubuntu-latest
 
+    outputs:
+      image_uri: ${{ steps.build.outputs.image_uri }}
+
     steps:
-      # Checkout the repo
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up Java 17 (Amazon Corretto)
-      - name: Set up Java 17
+      - name: Set up Java
         uses: actions/setup-java@v3
         with:
           distribution: corretto
           java-version: 17
 
-      # Build Spring Boot app
       - name: Build Spring Boot JAR
         run: mvn clean package -DskipTests
 
-      # Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
-      # Login to Amazon ECR
       - name: Login to Amazon ECR
-        id: ecr-login
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Ensure ECR repository exists
       - name: Ensure ECR repository exists
         run: |
-          aws ecr describe-repositories --repository-names springboot-app || \
-          aws ecr create-repository --repository-name springboot-app
+          aws ecr describe-repositories --repository-names $APP_NAME || \
+          aws ecr create-repository --repository-name $APP_NAME
 
-      # Build Docker image
-      - name: Build Docker image
+      - name: Build & Push Docker Image
+        id: build
         run: |
           IMAGE_TAG=v${{ github.run_number }}
-          IMAGE_URI=${{ steps.ecr-login.outputs.registry }}/springboot-app:$IMAGE_TAG
-          docker build -t $IMAGE_URI .
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/$APP_NAME:$IMAGE_TAG
 
-      # Push Docker image to ECR
-      - name: Push Docker image to ECR
-        run: |
+          docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
 
-      # Update kubeconfig to connect to EKS
+          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+  # ----------------------------------------------------
+  # 2. DEPLOY TO DEV (Auto)
+  # ----------------------------------------------------
+  deploy-dev:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: dev
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
-            --region us-east-1 \
-            --name pulseagami-eks
+            --region $AWS_REGION \
+            --name ${CLUSTER_PREFIX}-dev
 
-      # Set image in Kubernetes deployment
-      - name: Deploy to EKS
+      - name: Deploy to DEV
         run: |
-          kubectl set image deployment/springboot-app-deployment \
-            springboot-app-container=$IMAGE_URI
+          kubectl set image deployment/${APP_NAME}-deployment \
+            ${APP_NAME}-container=${{ needs.build.outputs.image_uri }}
 
-      # Verify rollout
-      - name: Verify rollout success
-        run: kubectl rollout status deployment/springboot-app-deployment
+      - name: Verify DEV rollout
+        run: kubectl rollout status deployment/${APP_NAME}-deployment
+
+  # ----------------------------------------------------
+  # 3. DEPLOY TO STG (Requires Approval)
+  # ----------------------------------------------------
+  deploy-stg:
+    runs-on: ubuntu-latest
+    needs: deploy-dev
+    environment: stg   # <-- manual approval gate here
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region $AWS_REGION \
+            --name ${CLUSTER_PREFIX}-stg
+
+      - name: Deploy to STG
+        run: |
+          kubectl set image deployment/${APP_NAME}-deployment \
+            ${APP_NAME}-container=${{ needs.build.outputs.image_uri }}
+
+      - name: Verify STG rollout
+        run: kubectl rollout status deployment/${APP_NAME}-deployment
+
+  # ----------------------------------------------------
+  # 4. DEPLOY TO PROD (Requires Approval)
+  # ----------------------------------------------------
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: deploy-stg
+    environment: prod   # <-- manual approval gate here
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region $AWS_REGION \
+            --name ${CLUSTER_PREFIX}-prod
+
+      - name: Deploy to PROD
+        run: |
+          kubectl set image deployment/${APP_NAME}-deployment \
+            ${APP_NAME}-container=${{ needs.build.outputs.image_uri }}
+
+      - name: Verify PROD rollout
+        run: kubectl rollout status deployment/${APP_NAME}-deployment
