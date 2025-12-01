@@ -99,7 +99,7 @@ jobs:
               ${APP_NAME}-container=${IMAGE_URI} --record
           else
             echo "First deployment — applying manifest with BASE image..."
-            kubectl apply -f deployment.yaml
+            kubectl apply -f ./deployment.yaml
 
             echo "Waiting for deployment to be ready..."
             kubectl rollout status deployment/$DEPLOY
