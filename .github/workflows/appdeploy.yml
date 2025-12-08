@@ -58,7 +58,12 @@ jobs:
       - name: Push Docker image to ECR
         run: |
           docker push $IMAGE_URI
+  
+  Deploy-to-EKS-Dev:
+    
+    runs-on: ubuntu-latest
 
+    steps:
       # Update kubeconfig to connect to EKS
       - name: Update kubeconfig
         run: |
