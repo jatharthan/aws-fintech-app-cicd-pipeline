@@ -2,8 +2,10 @@ name: Build and Push to ECR
 
 on:
   push:
-    branches:
-      - master
+    branches: [ "master" ]
+    paths-ignore:
+      - 'README.md'
+      - '.github/workflows/*.yml'
 
 jobs:
   build-and-push:
@@ -73,8 +75,20 @@ jobs:
             echo "Deployment $DEPLOYMENT_NAME already exists. Skipping apply."
           else
             echo "Deployment $DEPLOYMENT_NAME does not exist. Applying deployment.yaml..."
-            kubectl apply -f ./deployment.yaml   # <- path to root
+            kubectl apply -f ./deployment.yaml
           fi
+
+      # Conditional Service creation
+      - name: Apply Service if not exists
+        run: |
+          SERVICE_NAME="springboot-app-service"
+          if kubectl get service "$SERVICE_NAME" >/dev/null 2>&1; then
+            echo "Service $SERVICE_NAME already exists. Skipping apply."
+          else
+            echo "Service $SERVICE_NAME does not exist. Applying service.yaml..."
+            kubectl apply -f ./service.yaml
+          fi
+
 
       # Set image in Kubernetes deployment
       - name: Deploy to EKS
