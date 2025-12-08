@@ -10,6 +10,8 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    outputs:
+      IMAGE_URI: ${{ steps.set-image.outputs.IMAGE_URI }}
 
     steps:
       # Checkout the repo
@@ -46,22 +48,24 @@ jobs:
           aws ecr describe-repositories --repository-names springboot-app || \
           aws ecr create-repository --repository-name springboot-app
 
-      # Build Docker image
-      - name: Build Docker image and push to ecr
+      # Build Docker image and push to ECR
+      - name: Build Docker image and push
         id: set-image
         run: |
           IMAGE_TAG=v${{ github.run_number }}
           IMAGE_URI=${{ steps.ecr-login.outputs.registry }}/springboot-app:$IMAGE_TAG
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+          # Print to console for debug
           echo "Docker image URI is: $IMAGE_URI"
 
-    outputs:
-      IMAGE_URI: ${{ steps.set-image.outputs.IMAGE_URI }}
+          # Set for same-job steps
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
-  
+          # Set as step output for job outputs
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+
 
   Deploy-to-EKS-Dev:
     runs-on: ubuntu-latest
@@ -82,6 +86,17 @@ jobs:
           aws eks update-kubeconfig \
             --region us-east-1 \
             --name pulseagami-eks-dev
+
+      # Debug: Check that IMAGE_URI is received
+      - name: Debug IMAGE_URI
+        run: |
+          IMAGE_URI=${{ needs.build-and-push.outputs.IMAGE_URI }}
+          if [ -z "$IMAGE_URI" ]; then
+            echo "ERROR: IMAGE_URI is empty!"
+            exit 1
+          else
+            echo "IMAGE_URI in deploy job: $IMAGE_URI"
+          fi
 
       # Conditional deployment
       - name: Apply Deployment if not exists
