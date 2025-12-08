@@ -10,8 +10,6 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    outputs:
-      IMAGE_URI: ${{ steps.set-image.outputs.IMAGE_URI }}
 
     steps:
       # Checkout the repo
@@ -49,7 +47,7 @@ jobs:
           aws ecr create-repository --repository-name springboot-app
 
       # Build Docker image
-      - name: Build Docker image
+      - name: Build Docker image and push to ecr
         id: set-image
         run: |
           IMAGE_TAG=v${{ github.run_number }}
@@ -58,6 +56,10 @@ jobs:
           docker push $IMAGE_URI
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+          echo "Docker image URI is: $IMAGE_URI"
+
+    outputs:
+      IMAGE_URI: ${{ steps.set-image.outputs.IMAGE_URI }}
 
   
 
