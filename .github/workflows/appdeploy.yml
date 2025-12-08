@@ -53,7 +53,7 @@ jobs:
         id: set-image
         run: |
           IMAGE_TAG=v${{ github.run_number }}
-          IMAGE_URI=715841367723.dkr.ecr.us-east-1.amazonaws.com/springboot-app:$IMAGE_TAG
+          # IMAGE_URI=${{ steps.ecr-login.outputs.registry }}/springboot-app:$IMAGE_TAG
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
 
@@ -64,7 +64,8 @@ jobs:
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
           # Set as step output for job outputs
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+          # echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+          echo "IMAGE_URI=nginx:latest" >> $GITHUB_OUTPUT
 
 
   Deploy-to-EKS-Dev:
@@ -90,7 +91,7 @@ jobs:
       # Debug: Check that IMAGE_URI is received
       - name: Debug IMAGE_URI
         run: |
-          IMAGE_URI=715841367723.dkr.ecr.us-east-1.amazonaws.com/springboot-app:v29
+          IMAGE_URI=${{ needs.build-and-push.outputs.IMAGE_URI }}
           if [ -z "$IMAGE_URI" ]; then
             echo "ERROR: IMAGE_URI is empty!"
             exit 1
