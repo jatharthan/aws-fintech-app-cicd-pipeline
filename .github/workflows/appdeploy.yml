@@ -53,9 +53,9 @@ jobs:
         id: set-image
         run: |
           IMAGE_TAG=v${{ github.run_number }}
-          IMAGE_URI=${{ steps.ecr-login.outputs.registry }}/springboot-app:$IMAGE_TAG
-          docker build -t $IMAGE_URI .
-          docker push $IMAGE_URI
+          IMAGE_URI="${{ steps.ecr-login.outputs.registry }}/springboot-app:$IMAGE_TAG"
+          docker build -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
 
           # Print to console for debug
           echo "Docker image URI is: $IMAGE_URI"
