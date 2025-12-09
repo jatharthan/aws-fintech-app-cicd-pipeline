@@ -64,7 +64,8 @@ jobs:
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
           # Set as step output for job outputs
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+          # echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+          echo "IMAGE_URI=nginx:latest" >> $GITHUB_OUTPUT
           
       - name: Print IMAGE_URI
         run: |
