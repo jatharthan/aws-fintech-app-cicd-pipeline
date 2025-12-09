@@ -64,9 +64,11 @@ jobs:
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
           # Set as step output for job outputs
-          # echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
-          echo "IMAGE_URI=nginx:latest" >> $GITHUB_OUTPUT
-
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+          
+      - name: Print IMAGE_URI
+        run: |
+          echo "IMAGE_URI from step output: ${{ steps.set-image.outputs.IMAGE_URI }}"
 
   Deploy-to-EKS-Dev:
     runs-on: ubuntu-latest
