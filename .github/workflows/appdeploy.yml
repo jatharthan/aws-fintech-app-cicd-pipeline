@@ -53,9 +53,9 @@ jobs:
         id: set-image
         run: |
           IMAGE_TAG=v${{ github.run_number }}
-          IMAGE_URI="${{ steps.ecr-login.outputs.registry }}/springboot-app:$IMAGE_TAG"
-          docker build -t "$IMAGE_URI" .
-          docker push "$IMAGE_URI"
+          IMAGE_URI=${{ steps.ecr-login.outputs.registry }}/springboot-app:$IMAGE_TAG
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
 
           # Print to console for debug
           echo "Docker image URI is: $IMAGE_URI"
@@ -64,9 +64,8 @@ jobs:
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
           # Set as step output for job outputs
-          ENCODED_URI=$(python -c "import urllib.parse; print(urllib.parse.quote('$IMAGE_URI'))")
-          echo "IMAGE_URI=$ENCODED_URI" >> $GITHUB_OUTPUT
-          # echo "IMAGE_URI=nginx:latest" >> $GITHUB_OUTPUT
+          # echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+          echo "IMAGE_URI=nginx:latest" >> $GITHUB_OUTPUT
           
       - name: Print IMAGE_URI
         run: |
@@ -95,12 +94,11 @@ jobs:
       # Debug: Check that IMAGE_URI is received
       - name: Debug IMAGE_URI
         run: |
-          ENCODED_URI=${{ needs.build-and-push.outputs.IMAGE_URI }}
-          if [ -z "$ENCODED_URI" ]; then
+          IMAGE_URI=${{ needs.build-and-push.outputs.IMAGE_URI }}
+          if [ -z "$IMAGE_URI" ]; then
             echo "ERROR: IMAGE_URI is empty!"
             exit 1
           else
-            IMAGE_URI=$(python -c "import urllib.parse; print(urllib.parse.unquote('$ENCODED_URI'))")
             echo "IMAGE_URI in deploy job: $IMAGE_URI"
           fi
 
