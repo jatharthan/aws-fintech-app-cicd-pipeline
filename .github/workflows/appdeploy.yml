@@ -97,7 +97,7 @@ jobs:
       # Debug: Check that IMAGE_URI is received
       - name: Debug IMAGE_URI
         run: |
-          IMAGE_URI=${{ needs.build-and-push.outputs.IMAGE_URI }}
+          IMAGE_URI=${{ needs.build-and-push.outputs.IMAGE_TAG }}
           if [ -z "$IMAGE_URI" ]; then
             echo "ERROR: IMAGE_URI is empty!"
             exit 1
