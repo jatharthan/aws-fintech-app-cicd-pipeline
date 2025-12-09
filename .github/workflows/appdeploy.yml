@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       IMAGE_URI: ${{ steps.set-image.outputs.IMAGE_URI }}
+      IMAGE_TAG: ${{ steps.set-image.outputs.IMAGE_TAG }}
 
     steps:
       # Checkout the repo
@@ -54,6 +55,7 @@ jobs:
         run: |
           IMAGE_TAG=v${{ github.run_number }}
           IMAGE_URI=${{ steps.ecr-login.outputs.registry }}/springboot-app:$IMAGE_TAG
+          IMAGE_URI_NOTAGGED=${{ steps.ecr-login.outputs.registry }}/springboot-app
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
 
@@ -64,8 +66,9 @@ jobs:
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
           # Set as step output for job outputs
-          # echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
-          echo "IMAGE_URI=nginx:latest" >> $GITHUB_OUTPUT
+          echo "IMAGE_URI=$IMAGE_URI_NOTAGGED" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          # echo "IMAGE_URI=nginx:latest" >> $GITHUB_OUTPUT
           
       - name: Print IMAGE_URI
         run: |
@@ -129,8 +132,11 @@ jobs:
       - name: Deploy to EKS
         run: |
           IMAGE_URI=${{ needs.build-and-push.outputs.IMAGE_URI }}
+          IMAGE_TAG=${{ needs.build-and-push.outputs.IMAGE_TAG }}
+          FULL_IMAGE="$IMAGE_URI:$IMAGE_TAG"
+          echo "Updating deployment with image: $FULL_IMAGE"
           kubectl set image deployment/springboot-app-deployment \
-            springboot-app-container=$IMAGE_URI
+            springboot-app-container=$FULL_IMAGE
 
       # Verify rollout
       - name: Verify rollout success
