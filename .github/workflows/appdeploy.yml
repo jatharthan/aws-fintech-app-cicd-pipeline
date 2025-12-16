@@ -30,7 +30,7 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=jatharthan_aws-fintech-app-cicd-pipeline
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=jatharthan_aws-fintech-app-cicd-pipeline -Dsonar.organization=jatharthan
 
       # Build Spring Boot app
       - name: Build Spring Boot JAR
